@@ -1,2 +1,2 @@
 # docker-ci
-Workflow for publishing Docker images
+Workflows and utilities for working with, building, and publishing Docker images.
