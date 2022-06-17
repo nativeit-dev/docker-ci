@@ -9,11 +9,8 @@ name: Docker CI
 #
 #   $REPO           # Docker Hub/container registry repo
 #   $IMAGE_NAME     # Name of the image to push
-#
 
 on:
-  schedule:
-    - cron: '17 3 * * *'
   push:
     branches:
       - 'build'
@@ -23,6 +20,7 @@ on:
   tags:
     - 'v*.*.*'
     - 'latest'
+  
   pull_request:
     branches:
       - 'build'
