@@ -1,0 +1,193 @@
+name: test-cosign
+
+on: [pull_request]
+
+jobs:
+  test_cosign_action:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    permissions: {}
+    name: Install Cosign and test presence in path
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+    - name: Install Cosign
+      uses: ./
+    - name: Check install!
+      run: cosign version
+    - name: Check root directory
+      run: |
+        if [[ $(git diff --stat) != '' ]]; then
+          echo 'should be clean'
+          exit 1
+        else
+          exit 0
+        fi
+      shell: bash
+
+  test_existing_release_action:
+    # this does not run on macOS as the support for multi-arch was not added yet
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    permissions: {}
+    name: Install existing release of Cosign and test presence in path
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@de5c6db865c272bde755152889dbda79bccb85f7 #v1.3.0
+    - name: Check install!
+      run: cosign version
+    - name: Check root directory
+      run: |
+        if [[ $(git diff --stat) != '' ]]; then
+          echo 'should be clean'
+          exit 1
+        else
+          exit 0
+        fi
+
+  test_cosign_action_custom:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    permissions: {}
+    name: Install Custom Cosign and test presence in path
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+    - name: Install Cosign
+      uses: ./
+      with:
+        cosign-release: 'v1.5.2'
+    - name: Check install!
+      run: cosign version
+    - name: Check root directory
+      run: |
+        if [[ $(git diff --stat) != '' ]]; then
+          echo 'should be clean'
+          exit 1
+        else
+          exit 0
+        fi
+      shell: bash
+
+  test_cosign_action_0_6_0:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    permissions: {}
+    name: Install Cosign v0.6.0 and test presence in path
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+    - name: Install Cosign
+      uses: ./
+      with:
+        cosign-release: 'v0.6.0'
+    - name: Check install!
+      run: cosign version
+    - name: Check root directory
+      run: |
+        if [[ $(git diff --stat) != '' ]]; then
+          echo 'should be clean'
+          exit 1
+        else
+          exit 0
+        fi
+      shell: bash
+
+  test_cosign_action_0_6_0_with_pre_installed_libpcsclite1_package:
+    # this test is specifically for linux and pcsclite1 dependencies
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    permissions: {}
+    name: Install Cosign v0.6.0 and test presence in path with pre installed libpcsclite1 package
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+    - name: Install libpcsclite1
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -yq libpcsclite1
+    - name: Install Cosign
+      uses: ./
+      with:
+        cosign-release: 'v0.6.0'
+    - name: Check install!
+      run: cosign version
+    - name: Check root directory
+      run: |
+        if [[ $(git diff --stat) != '' ]]; then
+          echo 'should be clean'
+          exit 1
+        else
+          exit 0
+        fi
+
+  test_cosign_action_wrong:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    permissions: {}
+    name: Try to install a wrong Cosign
+    steps:
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+    - name: Install Cosign
+      uses: ./
+      with:
+        cosign-release: 'honk'
+      continue-on-error: true
+
+  test_cosign_action_custom_dir:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    permissions: {}
+    name: Install Custom Cosign and test presence in path
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+      - name: Install Cosign
+        uses: ./
+        with:
+          install-dir: "$HOME/.cosigntest"
+      - name: Check install!
+        run: cosign version
+      - name: Check install dir!
+        run: |
+          if [[ $(dirname `which cosign`) == "$HOME/.cosigntest" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+        shell: bash
+      - name: Check root directory
+        run: |
+          if [[ $(git diff --stat) != '' ]]; then
+            echo 'should be clean'
+            exit 1
+          else
+            exit 0
+          fi
+        shell: bash
+
+  # test_cosign_with_go_install:
+  #   runs-on: ubuntu-latest
+  #   permissions: {}
+  #   name: Try to install cosign with go
+  #   steps:
+  #   - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+  #   - uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab # v3.0.0
+  #     with:
+  #       go-version: '1.17.x'
+  #   - name: Install Cosign
+  #     uses: ./
+  #     with:
+  #       cosign-release: 'main'
+  #   - name: Check install!
+  #     run: cosign version

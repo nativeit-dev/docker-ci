@@ -1,0 +1,63 @@
+#
+# Copyright 2021 The Sigstore Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: CI-Container-Build
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+
+permissions: read-all
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v2.4.0
+
+      - uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.3.0
+
+      - uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # v2.2.0
+        with:
+          go-version: '1.17'
+          check-latest: true
+
+      # will use the latest release available for ko
+      - uses: imjasonh/setup-ko@2c3450ca27f6e6f2b02e72a40f2163c281a1f675 # v0.4
+
+      - uses: chainguard-dev/actions/goimports@84c993eaf02da1c325854fb272a4df9184bd80fc # main
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/auth@ceee102ec2387dd9e844e01b530ccd4ec87ce955 # v0.8.0
+        with:
+          workload_identity_provider: 'projects/498091336538/locations/global/workloadIdentityPools/githubactions/providers/sigstore-cosign'
+          service_account: 'github-actions@projectsigstore.iam.gserviceaccount.com'
+
+      - name: creds
+        run: gcloud auth configure-docker --quiet
+
+      - name: containers-cosign-sget
+        run: make sign-ci-containers
+        env:
+          KO_PREFIX: gcr.io/projectsigstore/cosign/ci
+          COSIGN_PASSWORD: "${{secrets.COSIGN_PASSWORD}}"

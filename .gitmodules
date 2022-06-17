@@ -1,0 +1,6 @@
+[submodule "cosign-installer.git"]
+	path = cosign-installer
+	url = https://github.com/sigstore/cosign-installer.git
+[submodule "cosign.git"]
+	path = cosign
+	url = https://github.com/sigstore/cosign.git
